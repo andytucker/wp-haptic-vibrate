@@ -1,0 +1,12 @@
+# Local AI/agent skill installs
+.agent/
+.agents/
+.claude/
+.continue/
+.kiro/
+.qwen/
+.vibe/
+.windsurf/
+
+# Local skills installer metadata
+skills-lock.json

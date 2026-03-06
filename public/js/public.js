@@ -7,7 +7,7 @@
  *
  * No dependencies – pure vanilla ES5 for maximum compatibility.
  */
-/* global wpHapticPublic */
+/* global wpHapticPublic, WPHapticCore */
 (function () {
 	'use strict';
 
@@ -16,23 +16,7 @@
 
 	var rules     = wpHapticPublic.rules     || [];
 	var debugMode = wpHapticPublic.debugMode || false;
-
-	// ── Vibration support detection ──────────────────────────────────────
-	var canVibrate = !! (
-		navigator.vibrate      ||
-		navigator.webkitVibrate ||
-		navigator.mozVibrate    ||
-		navigator.msVibrate
-	);
-
-	// Normalise the method name.
-	if ( ! navigator.vibrate && navigator.webkitVibrate ) {
-		navigator.vibrate = navigator.webkitVibrate.bind( navigator );
-	} else if ( ! navigator.vibrate && navigator.mozVibrate ) {
-		navigator.vibrate = navigator.mozVibrate.bind( navigator );
-	} else if ( ! navigator.vibrate && navigator.msVibrate ) {
-		navigator.vibrate = navigator.msVibrate.bind( navigator );
-	}
+	var Haptic = window.WPHapticCore || null;
 
 	// ── AudioContext (lazy, for debug mode) ──────────────────────────────
 	var _audioCtx = null;
@@ -100,9 +84,11 @@
 	function triggerHaptic( el, pattern ) {
 		if ( ! pattern || pattern.length === 0 ) { return; }
 
-		if ( canVibrate ) {
-			navigator.vibrate( pattern );
-		} else if ( debugMode ) {
+		if ( Haptic && Haptic.vibrate( pattern ) ) {
+			return;
+		}
+
+		if ( debugMode ) {
 			playDebugAudio( pattern );
 			playDebugVisual( el, pattern );
 		}

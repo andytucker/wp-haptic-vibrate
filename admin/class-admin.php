@@ -50,6 +50,9 @@ class WP_Haptic_Vibrate_Admin {
 	 * @var    array
 	 */
 	public static $presets = array(
+		'light'         => array( 'label' => 'Light',         'pattern' => array( 10 ) ),
+		'medium'        => array( 'label' => 'Medium',        'pattern' => array( 20 ) ),
+		'heavy'         => array( 'label' => 'Heavy',         'pattern' => array( 40 ) ),
 		'single_short'  => array( 'label' => 'Single Short',  'pattern' => array( 200 ) ),
 		'single_long'   => array( 'label' => 'Single Long',   'pattern' => array( 600 ) ),
 		'double_tap'    => array( 'label' => 'Double Tap',    'pattern' => array( 100, 60, 100 ) ),
@@ -60,6 +63,7 @@ class WP_Haptic_Vibrate_Admin {
 		'sos'           => array( 'label' => 'SOS',           'pattern' => array( 100, 30, 100, 30, 100, 200, 200, 30, 200, 30, 200, 200, 100, 30, 100, 30, 100 ) ),
 		'notification'  => array( 'label' => 'Notification',  'pattern' => array( 50, 50, 100 ) ),
 		'success'       => array( 'label' => 'Success',       'pattern' => array( 100, 50, 200 ) ),
+		'warning'       => array( 'label' => 'Warning',       'pattern' => array( 30, 30, 30 ) ),
 		'error'         => array( 'label' => 'Error',         'pattern' => array( 300, 100, 300, 100, 300 ) ),
 		'custom'        => array( 'label' => 'Custom…',       'pattern' => array() ),
 	);
@@ -105,10 +109,19 @@ class WP_Haptic_Vibrate_Admin {
 		if ( ! $this->is_plugin_page( $hook_suffix ) ) {
 			return;
 		}
+
+		wp_enqueue_script(
+			$this->plugin_name . '-haptic-core',
+			WP_HAPTIC_VIBRATE_PLUGIN_URL . 'assets/js/haptic-core.js',
+			array(),
+			$this->version,
+			true
+		);
+
 		wp_enqueue_script(
 			$this->plugin_name . '-admin',
 			WP_HAPTIC_VIBRATE_PLUGIN_URL . 'admin/js/admin.js',
-			array( 'jquery' ),
+			array( 'jquery', $this->plugin_name . '-haptic-core' ),
 			$this->version,
 			true
 		);

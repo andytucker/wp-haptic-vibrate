@@ -9,13 +9,14 @@
  *  - Debug-mode toggle preview
  */
 
-/* global wpHapticAdmin, jQuery */
+/* global wpHapticAdmin, WPHapticCore, jQuery */
 (function ($) {
 	'use strict';
 
 	// ── Constants ─────────────────────────────────────────────────────────
 	var MAX_PULSE_WIDTH  = 40;   // px, max bar width for pattern visualiser
 	var MAX_PATTERN_MS   = 1000; // reference duration for scaling
+	var Haptic = window.WPHapticCore || null;
 
 	// ── Audio context (lazy) ───────────────────────────────────────────────
 	var _audioCtx = null;
@@ -89,16 +90,11 @@
 	function triggerPattern( pattern, debugMode, $elements ) {
 		if ( pattern.length === 0 ) { return; }
 
-		var canVibrate = !! (
-			navigator.vibrate ||
-			navigator.webkitVibrate ||
-			navigator.mozVibrate ||
-			navigator.msVibrate
-		);
+		if ( Haptic && Haptic.vibrate( pattern ) ) {
+			return;
+		}
 
-		if ( canVibrate ) {
-			navigator.vibrate( pattern );
-		} else if ( debugMode ) {
+		if ( debugMode ) {
 			playDebugAudio( pattern );
 			if ( $elements && $elements.length ) {
 				playDebugVisual( $elements, pattern );
@@ -187,7 +183,7 @@
 		$row.on( 'click', '.haptic-rule__test-btn', function () {
 			var pattern = resolveRowPattern( $row );
 			var debugMode = $( '#haptic-debug-mode' ).is( ':checked' );
-			triggerPattern( pattern, debugMode, null );
+			triggerPattern( pattern, debugMode, $( this ) );
 			showInlineFeedback( $row, pattern, debugMode );
 		} );
 	}
@@ -372,19 +368,11 @@
 			pattern = [ 200 ];
 		}
 
-		var canVibrate = !! (
-			navigator.vibrate ||
-			navigator.webkitVibrate ||
-			navigator.mozVibrate ||
-			navigator.msVibrate
-		);
-
-		if ( canVibrate ) {
-			navigator.vibrate( pattern );
+		if ( Haptic && Haptic.vibrate( pattern ) ) {
 			$status
 				.removeClass( 'is-error is-info' )
 				.addClass( 'is-success' )
-				.text( '✓ Vibrating: [' + pattern.join( ', ' ) + '] ms' );
+				.text( '✓ Haptic fired: [' + pattern.join( ', ' ) + '] ms' );
 		} else if ( debugMode ) {
 			playDebugAudio( pattern );
 			$status

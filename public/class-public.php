@@ -87,9 +87,17 @@ class WP_Haptic_Vibrate_Public {
 		}
 
 		wp_enqueue_script(
+			$this->plugin_name . '-haptic-core',
+			WP_HAPTIC_VIBRATE_PLUGIN_URL . 'assets/js/haptic-core.js',
+			array(),
+			$this->version,
+			true
+		);
+
+		wp_enqueue_script(
 			$this->plugin_name,
 			WP_HAPTIC_VIBRATE_PLUGIN_URL . 'public/js/public.js',
-			array(),
+			array( $this->plugin_name . '-haptic-core' ),
 			$this->version,
 			true
 		);
