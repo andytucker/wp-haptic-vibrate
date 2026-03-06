@@ -3,6 +3,9 @@
 
 	var Haptic = window.WPHapticCore || null;
 	var MAX_PULSE_WIDTH = 44;
+	// Keep this above the delayed synthetic click window so touch input on Android
+	// fires haptics immediately without double-triggering on the follow-up click.
+	var PRESS_DEBOUNCE_MS = 450;
 	var PRESETS = {
 		light: [10],
 		notification: [50, 50, 100],
@@ -135,6 +138,49 @@
 		status.textContent = message;
 	}
 
+	/**
+	 * Bind immediate touch/pen input while suppressing the follow-up click event
+	 * that many mobile browsers dispatch for the same interaction.
+	 *
+	 * @param {Element} element Target control.
+	 * @param {Function} handler Handler invoked for the interaction.
+	 */
+	function bindPressInteraction(element, handler) {
+		var lastPressAt = 0;
+
+		if (!element || typeof handler !== 'function') {
+			return;
+		}
+
+		if (window.PointerEvent) {
+			element.addEventListener('pointerdown', function (event) {
+				if (event.pointerType === 'mouse') {
+					return;
+				}
+
+				lastPressAt = Date.now();
+				handler(event);
+			}, {
+				passive: true
+			});
+		} else {
+			element.addEventListener('touchstart', function (event) {
+				lastPressAt = Date.now();
+				handler(event);
+			}, {
+				passive: true
+			});
+		}
+
+		element.addEventListener('click', function (event) {
+			if ((Date.now() - lastPressAt) < PRESS_DEBOUNCE_MS) {
+				return;
+			}
+
+			handler(event);
+		});
+	}
+
 	function triggerPattern(pattern, options) {
 		var debugMode = $('#demo-debug-mode').checked;
 		var duration = totalDuration(pattern);
@@ -209,6 +255,23 @@
 		}
 	}
 
+	function handleRuleTargetPress() {
+		triggerPattern(resolveCurrentRulePattern(), {
+			rippleTarget: $('#demo-rule-target')
+		});
+	}
+
+	function handlePluginTargetPress() {
+		if (!$('#demo-use-plugin-class').checked) {
+			setStatus('is-info', 'The plugin class example is currently turned off. Enable it to simulate class-based targeting.');
+			return;
+		}
+
+		triggerPattern(resolveCurrentRulePattern(), {
+			rippleTarget: $('#demo-plugin-target')
+		});
+	}
+
 	function bindEvents() {
 		$('#demo-preset').addEventListener('change', updateRuleBuilderUI);
 		$('#demo-custom-pattern').addEventListener('input', function () {
@@ -225,13 +288,13 @@
 		});
 
 		$all('.demo-test-btn').forEach(function (button) {
-			button.addEventListener('click', function () {
+			bindPressInteraction(button, function () {
 				handleDemoButton(button.getAttribute('data-demo-source'));
 			});
 		});
 
 		$all('[data-demo-pattern]').forEach(function (button) {
-			button.addEventListener('click', function () {
+			bindPressInteraction(button, function () {
 				var pattern = getPatternByName(button.getAttribute('data-demo-pattern'));
 				triggerPattern(pattern, {
 					rippleTarget: button,
@@ -240,6 +303,9 @@
 				renderPatternBadge(pattern);
 			});
 		});
+
+		bindPressInteraction($('#demo-rule-target'), handleRuleTargetPress);
+		bindPressInteraction($('#demo-plugin-target'), handlePluginTargetPress);
 	}
 
 	updateRuleBuilderUI();
