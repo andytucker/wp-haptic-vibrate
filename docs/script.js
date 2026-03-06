@@ -13,6 +13,7 @@
 		error: [300, 100, 300, 100, 300]
 	};
 	var audioContext = null;
+	var lastPressAt = 0;
 
 	function $(selector) {
 		return document.querySelector(selector);
@@ -135,6 +136,44 @@
 		status.textContent = message;
 	}
 
+	function bindPressInteraction(element, handler) {
+		if (!element || typeof handler !== 'function') {
+			return;
+		}
+
+		function invoke(event) {
+			handler(event);
+		}
+
+		if (window.PointerEvent) {
+			element.addEventListener('pointerdown', function (event) {
+				if (event.pointerType === 'mouse') {
+					return;
+				}
+
+				lastPressAt = Date.now();
+				invoke(event);
+			}, {
+				passive: true
+			});
+		} else {
+			element.addEventListener('touchstart', function (event) {
+				lastPressAt = Date.now();
+				invoke(event);
+			}, {
+				passive: true
+			});
+		}
+
+		element.addEventListener('click', function (event) {
+			if ((Date.now() - lastPressAt) < 450) {
+				return;
+			}
+
+			invoke(event);
+		});
+	}
+
 	function triggerPattern(pattern, options) {
 		var debugMode = $('#demo-debug-mode').checked;
 		var duration = totalDuration(pattern);
@@ -209,6 +248,23 @@
 		}
 	}
 
+	function handleRuleTargetPress() {
+		triggerPattern(resolveCurrentRulePattern(), {
+			rippleTarget: $('#demo-rule-target')
+		});
+	}
+
+	function handlePluginTargetPress() {
+		if (!$('#demo-use-plugin-class').checked) {
+			setStatus('is-info', 'The plugin class example is currently turned off. Enable it to simulate class-based targeting.');
+			return;
+		}
+
+		triggerPattern(resolveCurrentRulePattern(), {
+			rippleTarget: $('#demo-plugin-target')
+		});
+	}
+
 	function bindEvents() {
 		$('#demo-preset').addEventListener('change', updateRuleBuilderUI);
 		$('#demo-custom-pattern').addEventListener('input', function () {
@@ -225,13 +281,13 @@
 		});
 
 		$all('.demo-test-btn').forEach(function (button) {
-			button.addEventListener('click', function () {
+			bindPressInteraction(button, function () {
 				handleDemoButton(button.getAttribute('data-demo-source'));
 			});
 		});
 
 		$all('[data-demo-pattern]').forEach(function (button) {
-			button.addEventListener('click', function () {
+			bindPressInteraction(button, function () {
 				var pattern = getPatternByName(button.getAttribute('data-demo-pattern'));
 				triggerPattern(pattern, {
 					rippleTarget: button,
@@ -240,6 +296,9 @@
 				renderPatternBadge(pattern);
 			});
 		});
+
+		bindPressInteraction($('#demo-rule-target'), handleRuleTargetPress);
+		bindPressInteraction($('#demo-plugin-target'), handlePluginTargetPress);
 	}
 
 	updateRuleBuilderUI();
