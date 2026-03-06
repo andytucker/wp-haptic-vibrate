@@ -3,6 +3,7 @@
 
 	var Haptic = window.WPHapticCore || null;
 	var MAX_PULSE_WIDTH = 44;
+	var PRESS_DEBOUNCE_MS = 450;
 	var PRESETS = {
 		light: [10],
 		notification: [50, 50, 100],
@@ -141,10 +142,6 @@
 			return;
 		}
 
-		function invoke(event) {
-			handler(event);
-		}
-
 		if (window.PointerEvent) {
 			element.addEventListener('pointerdown', function (event) {
 				if (event.pointerType === 'mouse') {
@@ -152,25 +149,25 @@
 				}
 
 				lastPressAt = Date.now();
-				invoke(event);
+				handler(event);
 			}, {
 				passive: true
 			});
 		} else {
 			element.addEventListener('touchstart', function (event) {
 				lastPressAt = Date.now();
-				invoke(event);
+				handler(event);
 			}, {
 				passive: true
 			});
 		}
 
 		element.addEventListener('click', function (event) {
-			if ((Date.now() - lastPressAt) < 450) {
+			if ((Date.now() - lastPressAt) < PRESS_DEBOUNCE_MS) {
 				return;
 			}
 
-			invoke(event);
+			handler(event);
 		});
 	}
 
