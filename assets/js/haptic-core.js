@@ -203,7 +203,11 @@
 			var pauseMs = normalized[i + 1] || 0;
 
 			if (vibrateMs > 0) {
-				pendingTimeouts.push(window.setTimeout(fireIOSSwitch, delay));
+				if (0 === delay) {
+					fireIOSSwitch();
+				} else {
+					pendingTimeouts.push(window.setTimeout(fireIOSSwitch, delay));
+				}
 				pulseCount++;
 			}
 

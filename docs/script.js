@@ -138,6 +138,34 @@
 		status.textContent = message;
 	}
 
+	function describeSupport() {
+		if (!Haptic) {
+			return {
+				kind: 'is-info',
+				message: 'Haptic core did not load. The demo can still show visual UI, but it cannot trigger patterns.'
+			};
+		}
+
+		if (typeof Haptic.hasVibration === 'function' && Haptic.hasVibration()) {
+			return {
+				kind: 'is-success',
+				message: 'Native vibration API detected. Mobile taps should trigger real haptics on supported hardware.'
+			};
+		}
+
+		if (typeof Haptic.hasIOSHapticFallback === 'function' && Haptic.hasIOSHapticFallback()) {
+			return {
+				kind: 'is-info',
+				message: 'iOS Safari fallback detected. Web haptics on iPhone are still browser-limited, so effects may be subtle or unavailable.'
+			};
+		}
+
+		return {
+			kind: 'is-info',
+			message: 'This browser does not expose web haptics here. Use Desktop Debug Mode for ripple/audio preview.'
+		};
+	}
+
 	/**
 	 * Bind immediate touch/pen input while suppressing the follow-up click event
 	 * that many mobile browsers dispatch for the same interaction.
@@ -310,5 +338,7 @@
 
 	updateRuleBuilderUI();
 	updatePluginClassUI();
+	var support = describeSupport();
+	setStatus(support.kind, support.message);
 	bindEvents();
 }());
